@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NetWatch Dashboard</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #0f172a;
+            color: white;
+        }
+
+        header {
+            padding: 25px 40px;
+            background: #111827;
+            border-bottom: 1px solid #334155;
+        }
+
+        header h1 {
+            margin: 0;
+        }
+
+        header p {
+            color: #94a3b8;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            padding: 40px;
+        }
+
+        .card {
+            background: #1e293b;
+            padding: 25px;
+            border-radius: 14px;
+            border: 1px solid #334155;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            color: #cbd5e1;
+        }
+
+        .value {
+            font-size: 36px;
+            font-weight: bold;
+        }
+
+        .info {
+            color: #94a3b8;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>NetWatch</h1>
+    <p>Network & System Monitoring Dashboard</p>
+</header>
+
+<div class="dashboard">
+
+    <div class="card">
+        <h2>CPU Usage</h2>
+        <div class="value" id="cpu">--%</div>
+    </div>
+
+    <div class="card">
+        <h2>Memory Usage</h2>
+        <div class="value" id="memory">--%</div>
+    </div>
+
+    <div class="card">
+        <h2>Disk Usage</h2>
+        <div class="value" id="disk">--%</div>
+    </div>
+
+    <div class="card">
+        <h2>Hostname</h2>
+        <div class="value" id="hostname">--</div>
+    </div>
+
+    <div class="card">
+        <h2>Local IP</h2>
+        <div class="value" id="ip">--</div>
+    </div>
+
+</div>
+
+<script>
+async function updateDashboard() {
+    const response = await fetch("/api/system");
+    const data = await response.json();
+
+    document.getElementById("cpu").textContent =
+        data.cpu_percent + "%";
+
+    document.getElementById("memory").textContent =
+        data.memory_percent + "%";
+
+    document.getElementById("disk").textContent =
+        data.disk_percent + "%";
+
+    document.getElementById("hostname").textContent =
+        data.hostname;
+
+    document.getElementById("ip").textContent =
+        data.local_ip;
+}
+
+updateDashboard();
+
+setInterval(updateDashboard, 3000);
+</script>
+
+</body>
+</html>
