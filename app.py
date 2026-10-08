@@ -1,31 +1,42 @@
 from flask import Flask, jsonify, render_template
-from monitor import get_system_stats, get_network_connections
+
+from monitor import get_system_stats, get_processes
+from network import get_connections, get_network_stats
 
 app = Flask(__name__)
 
 
-@app.route("/")
+@app.get("/")
 def home():
     return render_template("index.html")
 
 
-@app.route("/api/system")
-def system_stats():
+@app.get("/api/system")
+def system_api():
     return jsonify(get_system_stats())
 
 
-@app.route("/api/network")
-def network_connections():
+@app.get("/api/network")
+def network_api():
     return jsonify({
-        "connections": get_network_connections()
+        "stats": get_network_stats(),
+        "connections": get_connections()
     })
 
 
-@app.route("/health")
+@app.get("/api/processes")
+def processes_api():
+    return jsonify({
+        "processes": get_processes()
+    })
+
+
+@app.get("/health")
 def health():
     return jsonify({
         "status": "online",
-        "project": "NetWatch"
+        "service": "NetWatch",
+        "version": "1.0.0"
     })
 
 
