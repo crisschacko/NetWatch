@@ -1,45 +1,26 @@
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from flask import Flask, jsonify, render_template
+from monitor import get_system_stats
 
-app = FastAPI(title="NetWatch")
+app = Flask(__name__)
 
-@app.get("/", response_class=HTMLResponse)
+
+@app.route("/")
 def home():
-    return """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>NetWatch</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                background: #0f172a;
-                color: white;
-                text-align: center;
-                padding: 80px;
-            }
+    return render_template("index.html")
 
-            h1 {
-                font-size: 48px;
-            }
 
-            p {
-                color: #cbd5e1;
-                font-size: 18px;
-            }
-        </style>
-    </head>
-    <body>
-        <h1>NetWatch</h1>
-        <p>Network & System Monitoring Dashboard</p>
-        <p>System is running successfully.</p>
-    </body>
-    </html>
-    """
+@app.route("/api/system")
+def system_stats():
+    return jsonify(get_system_stats())
 
-@app.get("/health")
+
+@app.route("/health")
 def health():
-    return {
+    return jsonify({
         "status": "online",
         "project": "NetWatch"
-    }
+    })
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
