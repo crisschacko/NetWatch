@@ -16,6 +16,38 @@ def get_local_ip():
         return "Unavailable"
 
 
+def get_network_connections():
+    connections = []
+
+    try:
+        for connection in psutil.net_connections(kind="inet"):
+            if connection.status == "ESTABLISHED":
+                local_address = (
+                    f"{connection.laddr.ip}:{connection.laddr.port}"
+                    if connection.laddr
+                    else "Unknown"
+                )
+
+                remote_address = (
+                    f"{connection.raddr.ip}:{connection.raddr.port}"
+                    if connection.raddr
+                    else "Unknown"
+                )
+
+                connections.append({
+                    "protocol": "TCP",
+                    "local": local_address,
+                    "remote": remote_address,
+                    "status": connection.status,
+                    "pid": connection.pid
+                })
+
+    except (psutil.AccessDenied, PermissionError):
+        pass
+
+    return connections[:50]
+
+
 def get_system_stats():
     global last_sent, last_received, last_time
 
@@ -43,10 +75,8 @@ def get_system_stats():
         "disk_percent": disk.percent,
         "hostname": socket.gethostname(),
         "local_ip": get_local_ip(),
-
         "bytes_sent": network.bytes_sent,
         "bytes_received": network.bytes_recv,
-
         "upload_speed": upload_speed,
         "download_speed": download_speed
     }
