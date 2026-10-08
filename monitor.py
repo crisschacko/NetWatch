@@ -1,5 +1,4 @@
 import time
-
 import psutil
 
 from network import get_network_stats
@@ -71,9 +70,7 @@ def get_processes(limit=10):
             processes.append({
                 "pid": info["pid"],
                 "name": info["name"] or "Unknown",
-                "cpu_percent": round(
-                    info["cpu_percent"] or 0, 2
-                ),
+                "cpu_percent": round(info["cpu_percent"] or 0, 2),
                 "memory_percent": round(
                     info["memory_percent"] or 0, 2
                 )
