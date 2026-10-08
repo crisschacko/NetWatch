@@ -1,48 +1,64 @@
-import psutil
 import socket
+
+import psutil
 
 
 def get_local_ip():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
     try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.connect(("8.8.8.8", 80))
-        ip = sock.getsockname()[0]
-        sock.close()
-        return ip
-    except Exception:
+        return sock.getsockname()[0]
+    except OSError:
         return "Unavailable"
+    finally:
+        sock.close()
 
 
 def get_network_stats():
-    network = psutil.net_io_counters()
+    counters = psutil.net_io_counters()
 
     return {
-        "bytes_sent": network.bytes_sent,
-        "bytes_received": network.bytes_recv,
-        "local_ip": get_local_ip()
+        "local_ip": get_local_ip(),
+        "bytes_sent": counters.bytes_sent,
+        "bytes_received": counters.bytes_recv,
+        "packets_sent": counters.packets_sent,
+        "packets_received": counters.packets_recv
     }
 
 
-def get_connections():
+def get_interfaces():
+    interfaces = {}
+
+    for name, addresses in psutil.net_if_addrs().items():
+        interfaces[name] = []
+
+        for address in addresses:
+            interfaces[name].append({
+                "family": str(address.family),
+                "address": address.address,
+                "netmask": address.netmask
+            })
+
+    return interfaces
+
+
+def get_connections(limit=50):
     connections = []
 
     try:
         for connection in psutil.net_connections(kind="inet"):
+            if connection.status == psutil.CONN_NONE:
+                continue
 
             local = "N/A"
             remote = "N/A"
 
             if connection.laddr:
-                local = (
-                    f"{connection.laddr.ip}:"
-                    f"{connection.laddr.port}"
-                )
+                local = f"{connection.laddr.ip}:{connection.laddr.port}"
 
             if connection.raddr:
-                remote = (
-                    f"{connection.raddr.ip}:"
-                    f"{connection.raddr.port}"
-                )
+                remote = f"{connection.raddr.ip}:{connection.raddr.port}"
 
             connections.append({
                 "local": local,
@@ -54,4 +70,4 @@ def get_connections():
     except (psutil.AccessDenied, PermissionError):
         pass
 
-    return connections[:50]
+    return connections[:limit]
