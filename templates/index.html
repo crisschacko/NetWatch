@@ -1,430 +1,125 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>NetWatch | System Monitor</title>
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #0f172a;
-            color: #f8fafc;
-        }
-
-        header {
-            background: #111827;
-            padding: 28px 40px;
-            border-bottom: 1px solid #334155;
-        }
-
-        header h1 {
-            margin: 0;
-            font-size: 32px;
-        }
-
-        header p {
-            margin: 8px 0 0;
-            color: #94a3b8;
-        }
-
-        .container {
-            padding: 35px 40px;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns:
-                repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
-        }
-
-        .card {
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 14px;
-            padding: 24px;
-        }
-
-        .card h2 {
-            margin: 0;
-            font-size: 16px;
-            color: #94a3b8;
-        }
-
-        .value {
-            margin-top: 15px;
-            font-size: 30px;
-            font-weight: bold;
-            word-break: break-word;
-        }
-
-        .subtitle {
-            margin-top: 8px;
-            color: #64748b;
-            font-size: 13px;
-        }
-
-        .section {
-            margin-top: 30px;
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 14px;
-            padding: 24px;
-            overflow-x: auto;
-        }
-
-        .section h2 {
-            margin-top: 0;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 700px;
-        }
-
-        th,
-        td {
-            padding: 14px;
-            text-align: left;
-            border-bottom: 1px solid #334155;
-        }
-
-        th {
-            color: #94a3b8;
-            font-size: 13px;
-        }
-
-        td {
-            color: #e2e8f0;
-            font-size: 14px;
-        }
-
-        .online {
-            color: #22c55e;
-            font-weight: bold;
-        }
-
-        .footer {
-            text-align: center;
-            color: #64748b;
-            padding: 30px;
-        }
-
-        @media (max-width: 600px) {
-            header {
-                padding: 22px;
-            }
-
-            .container {
-                padding: 22px;
-            }
-
-            .value {
-                font-size: 24px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
 
-<header>
-    <h1>NetWatch</h1>
-    <p>Network & System Monitoring Dashboard</p>
+<header class="header">
+    <div>
+        <h1>NetWatch</h1>
+        <p>Python Network & System Monitoring Platform</p>
+    </div>
+
+    <span id="status" class="status">Checking...</span>
 </header>
 
-<div class="container">
+<main>
 
-    <div class="grid">
+    <section class="metrics">
 
-        <div class="card">
-            <h2>CPU Usage</h2>
-            <div class="value" id="cpu">--%</div>
-            <div class="subtitle">Processor utilization</div>
+        <article class="card">
+            <h3>CPU</h3>
+            <strong id="cpu">--%</strong>
+        </article>
+
+        <article class="card">
+            <h3>Memory</h3>
+            <strong id="memory">--%</strong>
+        </article>
+
+        <article class="card">
+            <h3>Disk</h3>
+            <strong id="disk">--%</strong>
+        </article>
+
+        <article class="card">
+            <h3>Upload</h3>
+            <strong id="upload">--</strong>
+        </article>
+
+        <article class="card">
+            <h3>Download</h3>
+            <strong id="download">--</strong>
+        </article>
+
+        <article class="card">
+            <h3>Local IP</h3>
+            <strong id="ip">--</strong>
+        </article>
+
+    </section>
+
+    <section class="panel">
+
+        <h2>System Information</h2>
+
+        <div class="info-grid">
+            <p>Hostname: <span id="hostname">--</span></p>
+            <p>Platform: <span id="platform">--</span></p>
+            <p>CPU Cores: <span id="cores">--</span></p>
+            <p>Uptime: <span id="uptime">--</span></p>
         </div>
 
-        <div class="card">
-            <h2>Memory Usage</h2>
-            <div class="value" id="memory">--%</div>
-            <div class="subtitle">RAM utilization</div>
+    </section>
+
+    <section class="panel">
+
+        <h2>Top Processes</h2>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>PID</th>
+                        <th>Process</th>
+                        <th>CPU</th>
+                        <th>Memory</th>
+                    </tr>
+                </thead>
+
+                <tbody id="processes">
+                </tbody>
+            </table>
         </div>
 
-        <div class="card">
-            <h2>Disk Usage</h2>
-            <div class="value" id="disk">--%</div>
-            <div class="subtitle">Storage utilization</div>
+    </section>
+
+    <section class="panel">
+
+        <h2>Network Connections</h2>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Local</th>
+                        <th>Remote</th>
+                        <th>Status</th>
+                        <th>PID</th>
+                    </tr>
+                </thead>
+
+                <tbody id="connections">
+                </tbody>
+            </table>
         </div>
 
-        <div class="card">
-            <h2>Hostname</h2>
-            <div class="value" id="hostname">--</div>
-            <div class="subtitle">System hostname</div>
-        </div>
+    </section>
 
-        <div class="card">
-            <h2>Local IP</h2>
-            <div class="value" id="ip">--</div>
-            <div class="subtitle">Network address</div>
-        </div>
+</main>
 
-        <div class="card">
-            <h2>Data Sent</h2>
-            <div class="value" id="sent">--</div>
-            <div class="subtitle">Total network upload</div>
-        </div>
+<footer>
+    NetWatch • Python + Flask + psutil
+</footer>
 
-        <div class="card">
-            <h2>Data Received</h2>
-            <div class="value" id="received">--</div>
-            <div class="subtitle">Total network download</div>
-        </div>
-
-        <div class="card">
-            <h2>Upload Speed</h2>
-            <div class="value" id="upload">--</div>
-            <div class="subtitle">Current upload speed</div>
-        </div>
-
-        <div class="card">
-            <h2>Download Speed</h2>
-            <div class="value" id="download">--</div>
-            <div class="subtitle">Current download speed</div>
-        </div>
-
-    </div>
-
-    <div class="section">
-
-        <h2>Active Network Connections</h2>
-
-        <table>
-
-            <thead>
-                <tr>
-                    <th>Protocol</th>
-                    <th>Local Address</th>
-                    <th>Remote Address</th>
-                    <th>Status</th>
-                    <th>PID</th>
-                </tr>
-            </thead>
-
-            <tbody id="connections">
-                <tr>
-                    <td colspan="5">
-                        Loading connections...
-                    </td>
-                </tr>
-            </tbody>
-
-        </table>
-
-    </div>
-
-    <div class="section">
-
-        <h2>System Status</h2>
-
-        <p>
-            Status:
-            <span class="online">● ONLINE</span>
-        </p>
-
-        <p>
-            Dashboard automatically refreshes every 3 seconds.
-        </p>
-
-    </div>
-
-</div>
-
-<div class="footer">
-    NetWatch • Python Flask Monitoring System
-</div>
-
-
-<script>
-
-function formatBytes(bytes) {
-
-    const units = ["B", "KB", "MB", "GB", "TB"];
-
-    let index = 0;
-
-    while (
-        bytes >= 1024 &&
-        index < units.length - 1
-    ) {
-        bytes /= 1024;
-        index++;
-    }
-
-    return bytes.toFixed(2) + " " + units[index];
-}
-
-
-function formatSpeed(bytes) {
-
-    const units = ["B/s", "KB/s", "MB/s", "GB/s"];
-
-    let index = 0;
-
-    while (
-        bytes >= 1024 &&
-        index < units.length - 1
-    ) {
-        bytes /= 1024;
-        index++;
-    }
-
-    return bytes.toFixed(2) + " " + units[index];
-}
-
-
-async function updateDashboard() {
-
-    try {
-
-        const response =
-            await fetch("/api/system");
-
-        const data =
-            await response.json();
-
-        document.getElementById("cpu")
-            .textContent =
-            data.cpu_percent + "%";
-
-        document.getElementById("memory")
-            .textContent =
-            data.memory_percent + "%";
-
-        document.getElementById("disk")
-            .textContent =
-            data.disk_percent + "%";
-
-        document.getElementById("hostname")
-            .textContent =
-            data.hostname;
-
-        document.getElementById("ip")
-            .textContent =
-            data.local_ip;
-
-        document.getElementById("sent")
-            .textContent =
-            formatBytes(data.bytes_sent);
-
-        document.getElementById("received")
-            .textContent =
-            formatBytes(data.bytes_received);
-
-        document.getElementById("upload")
-            .textContent =
-            formatSpeed(data.upload_speed);
-
-        document.getElementById("download")
-            .textContent =
-            formatSpeed(data.download_speed);
-
-    } catch (error) {
-
-        console.error(
-            "System monitoring error:",
-            error
-        );
-
-    }
-}
-
-
-async function updateConnections() {
-
-    try {
-
-        const response =
-            await fetch("/api/network");
-
-        const data =
-            await response.json();
-
-        const table =
-            document.getElementById("connections");
-
-        table.innerHTML = "";
-
-
-        if (
-            !data.connections ||
-            data.connections.length === 0
-        ) {
-
-            table.innerHTML = `
-                <tr>
-                    <td colspan="5">
-                        No active connections found.
-                    </td>
-                </tr>
-            `;
-
-            return;
-        }
-
-
-        data.connections.forEach(connection => {
-
-            const row =
-                document.createElement("tr");
-
-            row.innerHTML = `
-                <td>${connection.protocol}</td>
-                <td>${connection.local}</td>
-                <td>${connection.remote}</td>
-                <td>${connection.status}</td>
-                <td>${connection.pid ?? "N/A"}</td>
-            `;
-
-            table.appendChild(row);
-
-        });
-
-    } catch (error) {
-
-        console.error(
-            "Network monitoring error:",
-            error
-        );
-
-    }
-}
-
-
-updateDashboard();
-updateConnections();
-
-
-setInterval(
-    updateDashboard,
-    3000
-);
-
-
-setInterval(
-    updateConnections,
-    5000
-);
-
-</script>
+<script src="{{ url_for('static', filename='dashboard.js') }}"></script>
 
 </body>
-
 </html>
