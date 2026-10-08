@@ -19,6 +19,7 @@
 
         header h1 {
             margin: 0;
+            font-size: 32px;
         }
 
         header p {
@@ -42,15 +43,29 @@
         .card h2 {
             margin-top: 0;
             color: #cbd5e1;
+            font-size: 18px;
         }
 
         .value {
-            font-size: 36px;
+            font-size: 32px;
             font-weight: bold;
+            margin-top: 15px;
         }
 
         .info {
             color: #94a3b8;
+            margin-bottom: 0;
+        }
+
+        .status {
+            text-align: center;
+            color: #94a3b8;
+            padding-bottom: 30px;
+        }
+
+        .online {
+            color: #22c55e;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -67,54 +82,113 @@
     <div class="card">
         <h2>CPU Usage</h2>
         <div class="value" id="cpu">--%</div>
+        <p class="info">Processor utilization</p>
     </div>
 
     <div class="card">
         <h2>Memory Usage</h2>
         <div class="value" id="memory">--%</div>
+        <p class="info">RAM utilization</p>
     </div>
 
     <div class="card">
         <h2>Disk Usage</h2>
         <div class="value" id="disk">--%</div>
+        <p class="info">Storage utilization</p>
     </div>
 
     <div class="card">
         <h2>Hostname</h2>
         <div class="value" id="hostname">--</div>
+        <p class="info">System hostname</p>
     </div>
 
     <div class="card">
         <h2>Local IP</h2>
         <div class="value" id="ip">--</div>
+        <p class="info">Local network address</p>
+    </div>
+
+    <div class="card">
+        <h2>Data Sent</h2>
+        <div class="value" id="sent">--</div>
+        <p class="info">Network upload</p>
+    </div>
+
+    <div class="card">
+        <h2>Data Received</h2>
+        <div class="value" id="received">--</div>
+        <p class="info">Network download</p>
     </div>
 
 </div>
 
+<div class="status">
+    <p>
+        System Status:
+        <span class="online">● ONLINE</span>
+    </p>
+
+    <p>Updates automatically every 3 seconds.</p>
+</div>
+
 <script>
-async function updateDashboard() {
-    const response = await fetch("/api/system");
-    const data = await response.json();
 
-    document.getElementById("cpu").textContent =
-        data.cpu_percent + "%";
+function formatBytes(bytes) {
+    const units = ["B", "KB", "MB", "GB", "TB"];
 
-    document.getElementById("memory").textContent =
-        data.memory_percent + "%";
+    let i = 0;
 
-    document.getElementById("disk").textContent =
-        data.disk_percent + "%";
+    while (bytes >= 1024 && i < units.length - 1) {
+        bytes /= 1024;
+        i++;
+    }
 
-    document.getElementById("hostname").textContent =
-        data.hostname;
-
-    document.getElementById("ip").textContent =
-        data.local_ip;
+    return bytes.toFixed(2) + " " + units[i];
 }
+
+
+async function updateDashboard() {
+
+    try {
+
+        const response = await fetch("/api/system");
+
+        const data = await response.json();
+
+        document.getElementById("cpu").textContent =
+            data.cpu_percent + "%";
+
+        document.getElementById("memory").textContent =
+            data.memory_percent + "%";
+
+        document.getElementById("disk").textContent =
+            data.disk_percent + "%";
+
+        document.getElementById("hostname").textContent =
+            data.hostname;
+
+        document.getElementById("ip").textContent =
+            data.local_ip;
+
+        document.getElementById("sent").textContent =
+            formatBytes(data.bytes_sent);
+
+        document.getElementById("received").textContent =
+            formatBytes(data.bytes_received);
+
+    } catch (error) {
+
+        console.error("Unable to fetch system statistics:", error);
+
+    }
+}
+
 
 updateDashboard();
 
 setInterval(updateDashboard, 3000);
+
 </script>
 
 </body>
