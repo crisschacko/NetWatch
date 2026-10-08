@@ -1,90 +1,96 @@
-import time
+import socket
 
 import psutil
 
-from network import get_network_stats
-from system import get_system_info
+
+def get_local_ip():
+    """Return the local machine IP address."""
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    try:
+        sock.connect(("8.8.8.8", 80))
+        return sock.getsockname()[0]
+
+    except OSError:
+        return "Unavailable"
+
+    finally:
+        sock.close()
 
 
-_previous_sent = None
-_previous_received = None
-_previous_time = None
+def get_network_stats():
+    """Return network traffic statistics."""
 
-
-def calculate_network_speed():
-    global _previous_sent
-    global _previous_received
-    global _previous_time
-
-    stats = get_network_stats()
-
-    current_sent = stats["bytes_sent"]
-    current_received = stats["bytes_received"]
-    current_time = time.time()
-
-    upload_speed = 0
-    download_speed = 0
-
-    if _previous_time is not None:
-        elapsed = current_time - _previous_time
-
-        if elapsed > 0:
-            upload_speed = (
-                current_sent - _previous_sent
-            ) / elapsed
-
-            download_speed = (
-                current_received - _previous_received
-            ) / elapsed
-
-    _previous_sent = current_sent
-    _previous_received = current_received
-    _previous_time = current_time
+    counters = psutil.net_io_counters()
 
     return {
-        "upload_speed": round(max(upload_speed, 0), 2),
-        "download_speed": round(max(download_speed, 0), 2)
+        "local_ip": get_local_ip(),
+        "bytes_sent": counters.bytes_sent,
+        "bytes_received": counters.bytes_recv,
+        "packets_sent": counters.packets_sent,
+        "packets_received": counters.packets_recv
     }
 
 
-def get_system_stats():
-    system = get_system_info()
-    network = get_network_stats()
-    speed = calculate_network_speed()
+def get_interfaces():
+    """Return available network interfaces and their addresses."""
 
-    return {
-        **system,
-        **network,
-        **speed
-    }
+    interfaces = {}
 
+    for name, addresses in psutil.net_if_addrs().items():
 
-def get_processes(limit=10):
-    processes = []
+        interfaces[name] = []
 
-    for process in psutil.process_iter(
-        ["pid", "name", "cpu_percent", "memory_percent"]
-    ):
-        try:
-            info = process.info
+        for address in addresses:
 
-            processes.append({
-                "pid": info["pid"],
-                "name": info["name"] or "Unknown",
-                "cpu_percent": round(
-                    info["cpu_percent"] or 0, 2
-                ),
-                "memory_percent": round(
-                    info["memory_percent"] or 0, 2
-                )
+            interfaces[name].append({
+                "family": str(address.family),
+                "address": address.address,
+                "netmask": address.netmask
             })
 
-        except (psutil.NoSuchProcess, psutil.AccessDenied):
-            continue
+    return interfaces
 
-    processes.sort(
-        key=lambda item: item["cpu_percent"],
-        reverse=True
-    )
 
-    return processes[:limit]
+def get_connections(limit=50):
+    """Return active network connections."""
+
+    connections = []
+
+    try:
+        system_connections = psutil.net_connections(
+            kind="inet"
+        )
+
+        for connection in system_connections:
+
+            if connection.status == psutil.CONN_NONE:
+                continue
+
+            local = "N/A"
+            remote = "N/A"
+
+            if connection.laddr:
+                local = (
+                    f"{connection.laddr.ip}:"
+                    f"{connection.laddr.port}"
+                )
+
+            if connection.raddr:
+                remote = (
+                    f"{connection.raddr.ip}:"
+                    f"{connection.raddr.port}"
+                )
+
+            connections.append({
+                "local": local,
+                "remote": remote,
+                "status": connection.status,
+                "pid": connection.pid
+            })
+
+    except (psutil.AccessDenied, PermissionError):
+        pass
+
+    return connections[:limit]
