@@ -1,3 +1,4 @@
-Flask
-gunicorn
-psutil
+Flask>=3.0,<4.0
+gunicorn>=22.0
+psutil>=6.0
+pytest>=8.0
